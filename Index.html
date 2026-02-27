@@ -1,1 +1,703 @@
+<!DOCTYPE html>
 
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오늘의 시황 브리핑</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b24;
+    --surface2: #1e2535;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f2f7;
+    --muted: #8b93a8;
+    --up: #ff5b5b;
+    --down: #4c8ef7;
+    --accent: #6366f1;
+    --gold: #f59e0b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Pretendard', -apple-system, sans-serif;
+    padding-bottom: 80px;
+  }
+
+/* API Key Banner */
+.api-banner {
+background: linear-gradient(135deg, #1a1d35, #1e2535);
+border-bottom: 1px solid rgba(99,102,241,0.3);
+padding: 12px 16px;
+display: flex;
+align-items: center;
+gap: 10px;
+position: sticky;
+top: 0;
+z-index: 200;
+}
+.api-banner-text { font-size: 12px; color: #a5b4fc; flex: 1; }
+.api-banner-text strong { color: #fff; }
+.api-key-input {
+background: rgba(255,255,255,0.08);
+border: 1px solid rgba(99,102,241,0.4);
+border-radius: 8px;
+padding: 6px 10px;
+color: #fff;
+font-size: 12px;
+width: 160px;
+outline: none;
+font-family: monospace;
+}
+.api-key-input::placeholder { color: #555; }
+.api-key-btn {
+background: #6366f1;
+border: none;
+border-radius: 8px;
+padding: 6px 12px;
+color: #fff;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+white-space: nowrap;
+}
+.api-key-btn:hover { background: #4f46e5; }
+.demo-badge {
+background: rgba(245,158,11,0.15);
+color: var(–gold);
+font-size: 10px;
+font-weight: 700;
+padding: 2px 7px;
+border-radius: 20px;
+border: 1px solid rgba(245,158,11,0.3);
+white-space: nowrap;
+}
+.live-badge {
+background: rgba(74,222,128,0.15);
+color: #4ade80;
+font-size: 10px;
+font-weight: 700;
+padding: 2px 7px;
+border-radius: 20px;
+border: 1px solid rgba(74,222,128,0.3);
+white-space: nowrap;
+display: none;
+}
+
+.wrap { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+header { padding: 32px 0 20px; }
+.header-date { font-size: 12px; color: var(–muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.header-title { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; }
+.header-title span { background: linear-gradient(135deg, #6366f1, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header-sub { font-size: 13px; color: var(–muted); margin-top: 6px; }
+
+/* Loading skeleton */
+.skeleton {
+background: linear-gradient(90deg, var(–surface) 25%, var(–surface2) 50%, var(–surface) 75%);
+background-size: 200% 100%;
+animation: shimmer 1.5s infinite;
+border-radius: 8px;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Summary Card */
+.summary-card {
+background: linear-gradient(135deg, #1a1d35, #1e2535);
+border: 1px solid rgba(99,102,241,0.25);
+border-radius: 20px;
+padding: 18px;
+margin-bottom: 24px;
+position: relative;
+overflow: hidden;
+}
+.summary-card::before {
+content: ‘’;
+position: absolute;
+top: -30px; right: -30px;
+width: 100px; height: 100px;
+background: radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%);
+}
+.summary-label {
+display: flex; align-items: center; gap: 6px;
+font-size: 11px; font-weight: 700; color: #818cf8;
+letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+}
+.ai-dot { width: 6px; height: 6px; background: #6366f1; border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+.summary-text { font-size: 13px; line-height: 1.75; color: #c7d2fe; }
+.summary-text strong { color: #fff; font-weight: 600; }
+
+/* Section */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-title {
+font-size: 12px; font-weight: 700; color: var(–muted);
+letter-spacing: 0.06em; text-transform: uppercase;
+display: flex; align-items: center; gap: 8px;
+}
+.section-title::before { content: ‘’; width: 3px; height: 12px; background: var(–accent); border-radius: 2px; }
+.refresh-btn {
+font-size: 11px; color: var(–muted); cursor: pointer;
+background: none; border: none; display: flex; align-items: center; gap: 4px;
+padding: 4px 8px; border-radius: 8px; transition: background 0.15s;
+}
+.refresh-btn:hover { background: var(–surface2); color: var(–text); }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Index Grid */
+.index-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.index-card {
+background: var(–surface); border: 1px solid var(–border);
+border-radius: 16px; padding: 16px; cursor: pointer; transition: all 0.2s;
+}
+.index-card:hover { background: var(–surface2); transform: translateY(-1px); }
+.index-name { font-size: 11px; color: var(–muted); font-weight: 500; margin-bottom: 6px; }
+.index-value { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 3px; }
+.index-change { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 3px; }
+.up { color: var(–up); }
+.down { color: var(–down); }
+.neutral-c { color: var(–muted); }
+.mini-chart { margin-top: 10px; height: 30px; width: 100%; }
+.loading-bar { height: 30px; margin-top: 10px; border-radius: 6px; }
+
+/* FX Grid */
+.fx-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+.fx-card {
+background: var(–surface); border: 1px solid var(–border);
+border-radius: 14px; padding: 14px 10px; text-align: center;
+}
+.fx-label { font-size: 10px; color: var(–muted); margin-bottom: 5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.fx-value { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 3px; }
+.fx-change { font-size: 11px; font-weight: 600; }
+
+/* Real Estate */
+.re-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px; }
+.re-card {
+background: var(–surface); border: 1px solid var(–border);
+border-radius: 14px; padding: 14px 10px; text-align: center;
+}
+.re-region { font-size: 11px; color: var(–muted); margin-bottom: 5px; }
+.re-value { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 3px; }
+.re-sub { font-size: 11px; font-weight: 600; }
+
+/* Stock List */
+.stock-list {
+background: var(–surface); border: 1px solid var(–border);
+border-radius: 20px; overflow: hidden; margin-bottom: 24px;
+}
+.stock-item {
+display: flex; align-items: center; padding: 13px 16px;
+border-bottom: 1px solid var(–border); cursor: pointer; transition: background 0.15s;
+}
+.stock-item:last-child { border-bottom: none; }
+.stock-item:hover { background: var(–surface2); }
+.stock-rank { font-size: 12px; color: var(–muted); font-weight: 600; width: 18px; flex-shrink: 0; }
+.stock-icon {
+width: 34px; height: 34px; border-radius: 10px;
+display: flex; align-items: center; justify-content: center;
+font-size: 12px; font-weight: 800; margin: 0 10px 0 8px; flex-shrink: 0;
+}
+.stock-info { flex: 1; }
+.stock-name { font-size: 13px; font-weight: 600; margin-bottom: 1px; }
+.stock-ticker { font-size: 11px; color: var(–muted); }
+.stock-price-wrap { text-align: right; }
+.stock-price { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.stock-change { font-size: 11px; font-weight: 600; }
+
+/* News */
+.news-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.news-item {
+background: var(–surface); border: 1px solid var(–border);
+border-radius: 14px; padding: 13px 14px;
+display: flex; align-items: flex-start; gap: 10px;
+cursor: pointer; transition: background 0.15s;
+}
+.news-item:hover { background: var(–surface2); }
+.news-tag {
+font-size: 10px; font-weight: 700; padding: 3px 7px;
+border-radius: 20px; white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+}
+.tag-red { background: rgba(255,91,91,0.15); color: var(–up); }
+.tag-blue { background: rgba(76,142,247,0.15); color: var(–down); }
+.tag-gold { background: rgba(245,158,11,0.15); color: var(–gold); }
+.tag-purple { background: rgba(99,102,241,0.15); color: #818cf8; }
+.news-text { font-size: 13px; line-height: 1.5; color: #d1d5e8; }
+.news-time { font-size: 11px; color: var(–muted); margin-top: 3px; }
+
+/* Last updated */
+.last-updated { text-align: center; font-size: 11px; color: var(–muted); margin-bottom: 16px; }
+
+/* Bottom Nav */
+.bottom-nav {
+position: fixed; bottom: 0; left: 0; right: 0;
+background: rgba(13,15,20,0.95); backdrop-filter: blur(20px);
+border-top: 1px solid var(–border);
+display: flex; justify-content: space-around; padding: 10px 0 18px; z-index: 100;
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; opacity: 0.45; transition: opacity 0.2s; }
+.nav-item.active { opacity: 1; }
+.nav-icon { font-size: 19px; }
+.nav-label { font-size: 10px; font-weight: 600; }
+.nav-item.active .nav-label { color: #818cf8; }
+
+/* Fade in */
+.fade-in { opacity: 0; transform: translateY(10px); animation: fadeIn 0.4s forwards; }
+@keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+.fade-in:nth-child(1){animation-delay:0.05s}
+.fade-in:nth-child(2){animation-delay:0.1s}
+.fade-in:nth-child(3){animation-delay:0.15s}
+.fade-in:nth-child(4){animation-delay:0.2s}
+.fade-in:nth-child(5){animation-delay:0.25s}
+.fade-in:nth-child(6){animation-delay:0.3s}
+.fade-in:nth-child(7){animation-delay:0.35s}
+
+/* Error toast */
+.toast {
+position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+background: #1e2535; border: 1px solid rgba(255,91,91,0.4);
+color: #ffb3b3; font-size: 12px; padding: 10px 16px;
+border-radius: 12px; z-index: 999; opacity: 0;
+transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+}
+.toast.show { opacity: 1; }
+</style>
+
+</head>
+<body>
+
+<!-- API Key Banner -->
+
+<div class="api-banner">
+  <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0">
+    <span id="modeBadge" class="demo-badge">DEMO</span>
+    <span class="api-banner-text" id="bannerText"><strong>API 키</strong>를 입력하면 실시간 데이터로 전환돼요</span>
+  </div>
+  <input class="api-key-input" id="apiKeyInput" placeholder="API 키 입력..." maxlength="50" />
+  <button class="api-key-btn" onclick="applyApiKey()">적용</button>
+</div>
+
+<div class="wrap">
+  <header class="fade-in">
+    <div class="header-date" id="todayDate"></div>
+    <h1 class="header-title">오늘의 <span>시황 브리핑</span></h1>
+    <p class="header-sub" id="headerSub">데모 데이터로 표시 중 · API 키 입력 시 실시간 전환</p>
+  </header>
+
+  <!-- AI 요약 -->
+
+  <div class="summary-card fade-in">
+    <div class="summary-label"><div class="ai-dot"></div>AI 브리핑 요약</div>
+    <p class="summary-text" id="summaryText">
+      데이터를 불러오는 중이에요...
+    </p>
+  </div>
+
+  <!-- 미국 주요 지수 -->
+
+  <div class="fade-in">
+    <div class="section-header">
+      <div class="section-title">미국 지수</div>
+      <button class="refresh-btn" onclick="loadMarketData()"><span id="refreshIcon">↻</span> 새로고침</button>
+    </div>
+    <div class="index-row" id="usIndexRow">
+      <div class="index-card">
+        <div class="index-name">나스닥</div>
+        <div class="index-value skeleton" style="height:28px;width:100px;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:16px;width:120px"></div>
+        <div class="loading-bar skeleton"></div>
+      </div>
+      <div class="index-card">
+        <div class="index-name">S&amp;P 500</div>
+        <div class="index-value skeleton" style="height:28px;width:100px;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:16px;width:120px"></div>
+        <div class="loading-bar skeleton"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 국내 지수 -->
+
+  <div class="fade-in">
+    <div class="section-header">
+      <div class="section-title">국내 지수</div>
+    </div>
+    <div class="index-row" id="krIndexRow">
+      <div class="index-card">
+        <div class="index-name">KOSPI</div>
+        <div class="index-value skeleton" style="height:28px;width:100px;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:16px;width:120px"></div>
+        <div class="loading-bar skeleton"></div>
+      </div>
+      <div class="index-card">
+        <div class="index-name">KOSDAQ</div>
+        <div class="index-value skeleton" style="height:28px;width:100px;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:16px;width:120px"></div>
+        <div class="loading-bar skeleton"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 환율 / 금리 -->
+
+  <div class="fade-in">
+    <div class="section-header"><div class="section-title">환율 · 금리</div></div>
+    <div class="fx-row" id="fxRow">
+      <div class="fx-card"><div class="fx-label">USD/KRW</div><div class="skeleton" style="height:22px;margin:4px 0"></div><div class="skeleton" style="height:14px;width:60%;margin:0 auto"></div></div>
+      <div class="fx-card"><div class="fx-label">기준금리</div><div class="skeleton" style="height:22px;margin:4px 0"></div><div class="skeleton" style="height:14px;width:60%;margin:0 auto"></div></div>
+      <div class="fx-card"><div class="fx-label">국고채 3Y</div><div class="skeleton" style="height:22px;margin:4px 0"></div><div class="skeleton" style="height:14px;width:60%;margin:0 auto"></div></div>
+    </div>
+  </div>
+
+  <!-- 부동산 -->
+
+  <div class="fade-in">
+    <div class="section-header"><div class="section-title">부동산 시황</div><span style="font-size:11px;color:var(--muted)">KB부동산 기준</span></div>
+    <div class="re-grid" id="reGrid">
+      <div class="re-card"><div class="re-region">서울</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+      <div class="re-card"><div class="re-region">경기</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+      <div class="re-card"><div class="re-region">인천</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+      <div class="re-card"><div class="re-region">부산</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+      <div class="re-card"><div class="re-region">전세</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+      <div class="re-card"><div class="re-region">거래량</div><div class="skeleton" style="height:20px;margin:4px 0"></div><div class="skeleton" style="height:13px;width:70%;margin:0 auto"></div></div>
+    </div>
+  </div>
+
+  <!-- 인기 종목 -->
+
+  <div class="fade-in">
+    <div class="section-header"><div class="section-title">주목 종목</div></div>
+    <div class="stock-list" id="stockList">
+      <div class="stock-item" style="gap:8px">
+        <div class="skeleton" style="width:34px;height:34px;border-radius:10px;margin:0 10px 0 18px;flex-shrink:0"></div>
+        <div style="flex:1"><div class="skeleton" style="height:14px;width:80px;margin-bottom:6px"></div><div class="skeleton" style="height:12px;width:50px"></div></div>
+        <div><div class="skeleton" style="height:14px;width:70px;margin-bottom:6px"></div><div class="skeleton" style="height:12px;width:60px"></div></div>
+      </div>
+      <div class="stock-item" style="gap:8px">
+        <div class="skeleton" style="width:34px;height:34px;border-radius:10px;margin:0 10px 0 18px;flex-shrink:0"></div>
+        <div style="flex:1"><div class="skeleton" style="height:14px;width:80px;margin-bottom:6px"></div><div class="skeleton" style="height:12px;width:50px"></div></div>
+        <div><div class="skeleton" style="height:14px;width:70px;margin-bottom:6px"></div><div class="skeleton" style="height:12px;width:60px"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 주요 뉴스 -->
+
+  <div class="fade-in">
+    <div class="section-header"><div class="section-title">주요 뉴스</div></div>
+    <div class="news-list" id="newsList">
+      <div class="news-item"><div class="skeleton" style="height:14px;width:100%"></div></div>
+      <div class="news-item"><div class="skeleton" style="height:14px;width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="last-updated" id="lastUpdated"></div>
+</div>
+
+<!-- Toast -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Bottom Nav -->
+
+<nav class="bottom-nav">
+  <div class="nav-item active"><div class="nav-icon">📊</div><div class="nav-label">시황</div></div>
+  <div class="nav-item"><div class="nav-icon">🏠</div><div class="nav-label">부동산</div></div>
+  <div class="nav-item"><div class="nav-icon">📈</div><div class="nav-label">주식</div></div>
+  <div class="nav-item"><div class="nav-icon">💱</div><div class="nav-label">환율</div></div>
+  <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">설정</div></div>
+</nav>
+
+<script>
+// ─── 상태 ───────────────────────────────
+let API_KEY = '';
+let isLive = false;
+
+// ─── 날짜 ───────────────────────────────
+const now = new Date();
+const DAYS = ['일','월','화','수','목','금','토'];
+document.getElementById('todayDate').textContent =
+  `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${DAYS[now.getDay()]})`;
+
+// ─── 토스트 ───────────────────────────────
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ─── API 키 적용 ───────────────────────────────
+function applyApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { showToast('⚠️ API 키를 입력해주세요'); return; }
+  if (key.length < 10) { showToast('⚠️ API 키가 너무 짧아요. 다시 확인해주세요'); return; }
+  API_KEY = key;
+  isLive = true;
+  document.getElementById('modeBadge').className = 'live-badge';
+  document.getElementById('modeBadge').style.display = 'inline-block';
+  document.getElementById('modeBadge').textContent = '● LIVE';
+  document.querySelector('.demo-badge') && (document.querySelector('.demo-badge').style.display = 'none');
+  document.getElementById('bannerText').innerHTML = '<strong>실시간 데이터</strong> 연동됨 · Alpha Vantage';
+  document.getElementById('headerSub').textContent = '실시간 데이터 · Alpha Vantage';
+  showToast('✅ API 키 적용됨! 데이터를 불러오는 중...', 2000);
+  loadMarketData();
+}
+
+// ─── 미니 차트 SVG ───────────────────────────────
+function miniChart(points, isUp) {
+  const color = isUp ? '#ff5b5b' : '#4c8ef7';
+  const gradId = 'g' + Math.random().toString(36).substr(2,5);
+  const min = Math.min(...points), max = Math.max(...points);
+  const range = max - min || 1;
+  const w = 100, h = 30;
+  const pts = points.map((v, i) => {
+    const x = (i / (points.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg class="mini-chart" viewBox="0 0 100 30" preserveAspectRatio="none">
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${color}" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="${pts} 100,30 0,30" fill="url(#${gradId})" stroke="none"/>
+  </svg>`;
+}
+
+// ─── 랜덤 차트 포인트 생성 ───────────────────────────────
+function randomPoints(base, volatility, count = 12, trend = 0) {
+  const pts = [base];
+  for (let i = 1; i < count; i++) {
+    const prev = pts[i-1];
+    const change = (Math.random() - 0.48) * volatility + trend;
+    pts.push(Math.max(prev + change, base * 0.9));
+  }
+  return pts;
+}
+
+// ─── 데모 데이터 ───────────────────────────────
+const DEMO_DATA = {
+  nasdaq: { value: '17,845.12', change: '-124.56', pct: '-0.69', up: false },
+  sp500:  { value: '5,012.34',  change: '+18.90',  pct: '+0.38', up: true  },
+  kospi:  { value: '2,631.46',  change: '+12.34',  pct: '+0.47', up: true  },
+  kosdaq: { value: '851.24',    change: '-3.21',   pct: '-0.38', up: false },
+  fx: { usd: '1,342', rate: '3.50%', bond: '3.28%',
+        usdChg: '-3.2원', rateChg: '동결', bondChg: '▲ 0.02%p',
+        usdUp: true, rateUp: false, bondUp: true },
+  stocks: [
+    { rank:1, name:'삼성전자', ticker:'005930', icon:'삼', color:'#ff5b5b', price:'74,800원', change:'+800 (+1.08%)', up:true },
+    { rank:2, name:'SK하이닉스', ticker:'000660', icon:'SK', color:'#4c8ef7', price:'198,500원', change:'-1,500 (-0.75%)', up:false },
+    { rank:3, name:'NVIDIA', ticker:'NVDA', icon:'NV', color:'#f59e0b', price:'$875.40', change:'+12.30 (+1.42%)', up:true },
+    { rank:4, name:'Apple', ticker:'AAPL', icon:'🍎', color:'#818cf8', price:'$182.40', change:'-2.10 (-1.14%)', up:false },
+  ],
+  news: [
+    { tag:'주식', tagClass:'tag-blue', text:'연준 위원 "금리 인하 서두르지 않겠다"... 나스닥 기술주 중심 조정', time:'30분 전' },
+    { tag:'부동산', tagClass:'tag-red', text:'서울 아파트 매매 3주 연속 보합... 강남3구 거래량 소폭 회복세', time:'1시간 전' },
+    { tag:'환율', tagClass:'tag-gold', text:'원·달러 1,340원대 진입... 외국인 코스피 순매수 영향', time:'2시간 전' },
+    { tag:'반도체', tagClass:'tag-purple', text:'삼성전자 HBM4 양산 일정 앞당겨... 하반기 실적 기대감 상승', time:'3시간 전' },
+  ],
+  re: [
+    { region:'서울', value:'+0.02%', sub:'매매 보합', up:true },
+    { region:'경기', value:'-0.03%', sub:'소폭 하락', up:false },
+    { region:'인천', value:'-0.01%', sub:'보합', up:false },
+    { region:'부산', value:'+0.04%', sub:'소폭 상승', up:true },
+    { region:'전세', value:'+0.01%', sub:'서울 기준', up:true },
+    { region:'거래량', value:'2,341건', sub:'전주比 ↑12%', up:true },
+  ],
+  summary: `오늘 <strong>나스닥은 연준 위원의 매파 발언 이후 기술주 중심으로 조정</strong>을 받았어요. 반면 <strong>S&P 500은 소폭 반등</strong>에 성공했습니다. 국내에서는 코스피가 외국인 순매수로 강세를 보이고 있어요. <strong>원·달러 환율은 1,342원</strong>으로 소폭 강세를 유지 중이며, 부동산 시장은 서울을 중심으로 <strong>3주 연속 보합세</strong>가 이어지고 있어요.`
+};
+
+// ─── Alpha Vantage에서 실제 데이터 가져오기 ───────────────────────────────
+async function fetchQuote(symbol) {
+  const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const q = data['Global Quote'];
+  if (!q || !q['05. price']) throw new Error('데이터 없음: ' + symbol);
+  return {
+    price: parseFloat(q['05. price']),
+    change: parseFloat(q['09. change']),
+    pct: parseFloat(q['10. change percent'].replace('%','')),
+  };
+}
+
+async function fetchFX() {
+  const url = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=KRW&apikey=${API_KEY}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  const rate = data['Realtime Currency Exchange Rate'];
+  if (!rate) throw new Error('환율 데이터 없음');
+  return parseFloat(rate['5. Exchange Rate']);
+}
+
+// ─── UI 렌더 함수 ───────────────────────────────
+function renderIndexCard(name, d, chartPts) {
+  const arrow = d.up ? '▲' : '▼';
+  const cls = d.up ? 'up' : 'down';
+  return `<div class="index-card">
+    <div class="index-name">${name}</div>
+    <div class="index-value">${d.value}</div>
+    <div class="index-change ${cls}">${arrow} ${d.change} (${d.pct}%)</div>
+    ${miniChart(chartPts, d.up)}
+  </div>`;
+}
+
+function renderFX(d) {
+  return `
+  <div class="fx-card">
+    <div class="fx-label">USD/KRW</div>
+    <div class="fx-value">${d.usd}</div>
+    <div class="fx-change ${d.usdUp ? 'down' : 'up'}">${d.usdChg}</div>
+  </div>
+  <div class="fx-card">
+    <div class="fx-label">기준금리</div>
+    <div class="fx-value">${d.rate}</div>
+    <div class="fx-change neutral-c">${d.rateChg}</div>
+  </div>
+  <div class="fx-card">
+    <div class="fx-label">국고채 3Y</div>
+    <div class="fx-value">${d.bond}</div>
+    <div class="fx-change ${d.bondUp ? 'up' : 'down'}">${d.bondChg}</div>
+  </div>`;
+}
+
+function renderStocks(stocks) {
+  return stocks.map(s => `
+  <div class="stock-item">
+    <div class="stock-rank">${s.rank}</div>
+    <div class="stock-icon" style="background:${s.color}22;color:${s.color}">${s.icon}</div>
+    <div class="stock-info">
+      <div class="stock-name">${s.name}</div>
+      <div class="stock-ticker">${s.ticker}</div>
+    </div>
+    <div class="stock-price-wrap">
+      <div class="stock-price">${s.price}</div>
+      <div class="stock-change ${s.up ? 'up' : 'down'}">${s.change}</div>
+    </div>
+  </div>`).join('');
+}
+
+function renderNews(news) {
+  return news.map(n => `
+  <div class="news-item">
+    <div class="news-tag ${n.tagClass}">${n.tag}</div>
+    <div>
+      <div class="news-text">${n.text}</div>
+      <div class="news-time">${n.time}</div>
+    </div>
+  </div>`).join('');
+}
+
+function renderRE(re) {
+  return re.map(r => `
+  <div class="re-card">
+    <div class="re-region">${r.region}</div>
+    <div class="re-value ${r.region === '거래량' ? 'neutral-c' : (r.up ? 'up' : 'down')}" style="font-size:${r.region==='거래량'?'13px':'15px'}">${r.value}</div>
+    <div class="re-sub ${r.up ? 'up' : 'neutral-c'}">${r.sub}</div>
+  </div>`).join('');
+}
+
+// ─── 메인 데이터 로드 ───────────────────────────────
+async function loadMarketData() {
+  const icon = document.getElementById('refreshIcon');
+  icon.classList.add('spin');
+
+  try {
+    if (isLive && API_KEY) {
+      // ── 실제 API 호출 ──
+      let nasdaqData, sp500Data, fxData;
+
+      try {
+        const [nasdaq, sp500, fx] = await Promise.all([
+          fetchQuote('QQQ'),   // 나스닥 ETF
+          fetchQuote('SPY'),   // S&P500 ETF
+          fetchFX(),
+        ]);
+        nasdaqData = nasdaq;
+        sp500Data = sp500;
+        fxData = fx;
+      } catch(e) {
+        showToast('⚠️ API 한도 초과 또는 오류 - 데모 모드로 표시합니다', 4000);
+        isLive = false;
+        renderAll(DEMO_DATA);
+        icon.classList.remove('spin');
+        return;
+      }
+
+      const fmtPrice = (v) => v.toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+      const fmtChg = (v, up) => `${up?'+':''}${v.toFixed(2)}`;
+
+      const live = {
+        ...DEMO_DATA,
+        nasdaq: {
+          value: '$' + fmtPrice(nasdaqData.price),
+          change: fmtChg(nasdaqData.change, nasdaqData.change > 0),
+          pct: (nasdaqData.change > 0 ? '+' : '') + nasdaqData.pct.toFixed(2),
+          up: nasdaqData.change > 0
+        },
+        sp500: {
+          value: '$' + fmtPrice(sp500Data.price),
+          change: fmtChg(sp500Data.change, sp500Data.change > 0),
+          pct: (sp500Data.change > 0 ? '+' : '') + sp500Data.pct.toFixed(2),
+          up: sp500Data.change > 0
+        },
+        fx: {
+          ...DEMO_DATA.fx,
+          usd: Math.round(fxData).toLocaleString(),
+          usdChg: fxData > 1340 ? `+${(fxData - 1340).toFixed(0)}원` : `${(fxData - 1340).toFixed(0)}원`,
+          usdUp: fxData < 1340,
+        }
+      };
+      renderAll(live);
+    } else {
+      // ── 데모 모드 ──
+      await new Promise(r => setTimeout(r, 800)); // 로딩 효과
+      renderAll(DEMO_DATA);
+    }
+
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent =
+      `마지막 업데이트: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  } catch(err) {
+    showToast('❌ 데이터 불러오기 실패. 잠시 후 다시 시도해주세요.', 3000);
+  } finally {
+    icon.classList.remove('spin');
+  }
+}
+
+function renderAll(d) {
+  const nasdaqPts = randomPoints(100, 2, 14, d.nasdaq.up ? 0.3 : -0.3);
+  const sp500Pts  = randomPoints(100, 1.5, 14, d.sp500.up ? 0.3 : -0.3);
+  const kospiPts  = randomPoints(100, 1.8, 14, d.kospi.up ? 0.3 : -0.3);
+  const kosdaqPts = randomPoints(100, 2.2, 14, d.kosdaq.up ? 0.3 : -0.3);
+
+  document.getElementById('usIndexRow').innerHTML =
+    renderIndexCard('나스닥 (QQQ)', d.nasdaq, nasdaqPts) +
+    renderIndexCard('S&amp;P 500 (SPY)', d.sp500, sp500Pts);
+
+  document.getElementById('krIndexRow').innerHTML =
+    renderIndexCard('KOSPI', d.kospi, kospiPts) +
+    renderIndexCard('KOSDAQ', d.kosdaq, kosdaqPts);
+
+  document.getElementById('fxRow').innerHTML = renderFX(d.fx);
+  document.getElementById('reGrid').innerHTML = renderRE(d.re);
+  document.getElementById('stockList').innerHTML = renderStocks(d.stocks);
+  document.getElementById('newsList').innerHTML = renderNews(d.news);
+  document.getElementById('summaryText').innerHTML = d.summary;
+}
+
+// ─── 초기 로드 ───────────────────────────────
+loadMarketData();
+
+// ─── 5분마다 자동 갱신 ───────────────────────────────
+setInterval(() => { if (isLive) loadMarketData(); }, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
